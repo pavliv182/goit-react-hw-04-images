@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { fetchImages } from 'shared/services/API';
 import { Oval } from 'react-loader-spinner';
 
@@ -8,83 +8,96 @@ import Button from 'components/Button';
 import Modal from 'components/Modal';
 
 // import 'react-loader-spinner/dist/loader/css/react-spinner-loader.css';
-
-class App extends Component {
-  state = {
-    q: '',
-    page: 1,
+const App = () => {
+  const [modal, setModal] = useState({ showModal: false, modalData: {} });
+  const [q, setQ] = useState('');
+  const [page, setPage] = useState(1);
+  const [data, setData] = useState({
     images: [],
     loading: false,
-    showModal: false,
-    modalData: {},
     totalPages: null,
-  };
+  });
 
-  async componentDidUpdate(_, prevState) {
-    if (this.state.q !== prevState.q || prevState.page < this.state.page) {
-      this.setState({ loading: true });
-
+  useEffect(() => {
+    if (q === '') {
+      return;
+    }
+    setData(prevState => {
+      return {
+        ...prevState,
+        loading: true,
+      };
+    });
+    const data = async (q, page) => {
       try {
-        const data = await fetchImages(this.state.q, this.state.page);
-        console.log(data);
-        this.setState(prevState => {
+        const data = await fetchImages(q, page);
+        setData(prevState => {
           return {
             images: [...prevState.images, ...data.hits],
             loading: false,
-            // totalPages: Math.ceil(data.totalHits / 12),
-            // totalPages: data.hits.length,
             totalPages: data.total,
           };
         });
       } catch (error) {
-        console.log(error);
-        this.setState({ loading: false });
+        setData(prevState => {
+          return {
+            ...prevState,
+            loading: false,
+          };
+        });
       }
-    }
-  }
+    };
+    data(q, page);
+  }, [q, page]);
 
-  onSearch = q => {
-    this.setState({ q, page: 1, images: [] });
-  };
-
-  onLoadMore = () => {
-    // console.log(this.state.page);
-    this.setState(prevState => {
-      return { page: prevState.page + 1 };
+  const onSearch = q => {
+    setQ(q);
+    setPage(1);
+    setData(prevState => {
+      return {
+        ...prevState,
+        images: [],
+      };
     });
   };
 
-  toggleModal = modalData => {
-    this.setState({
+  const onLoadMore = () => {
+    setPage(page + 1);
+  };
+
+  const toggleModal = modalData => {
+    setModal({
       showModal: true,
       modalData,
     });
   };
 
-  closeModal = () => {
-    this.setState({
-      showModal: false,
+  const closeModal = () => {
+    setModal(prevState => {
+      return {
+        ...prevState,
+        showModal: false,
+      };
     });
   };
 
-  render() {
-    const { images, loading, showModal, modalData, totalPages } = this.state;
-    const { onSearch, toggleModal, onLoadMore, closeModal } = this;
-    // console.log(modalData);
-    // console.log(images);
-    return (
-      <>
-        <Searchbar onSearch={onSearch} />
-        <ImageGallery images={images} openModal={toggleModal} />
-        {!!images.length && images.length < totalPages && (
-          <Button onClick={onLoadMore} />
-        )}
-        {loading && <Oval width={200} />}
-        {showModal && <Modal data={modalData} closeModalWindow={closeModal} />}
-      </>
-    );
-  }
-}
+  const { images, loading, totalPages } = data;
+  const { showModal, modalData } = modal;
+  return (
+    <>
+      <Searchbar onSearch={onSearch} />
+      <ImageGallery images={images} openModal={toggleModal} />
+      {!!images.length && images.length < totalPages && (
+        <Button onClick={onLoadMore} />
+      )}
+      {loading && <Oval width={200} />}
+      {showModal && <Modal data={modalData} closeModalWindow={closeModal} />}
+    </>
+  );
+};
+
 export default App;
 
 // !!images.length
+// totalPages: Math.ceil(data.totalHits / 12),
+// totalPages: data.hits.length,
