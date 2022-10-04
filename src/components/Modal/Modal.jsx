@@ -1,37 +1,39 @@
-import { Component } from 'react';
+// import { useCallback } from 'react';
+import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 import css from './Modal.module.css';
 
 const modalWrapper = document.getElementById('modal');
 
-export default class Modal extends Component {
-  componentDidMount() {
-    document.addEventListener('keydown', this.closeModal);
-  }
-  componentWillUnmount() {
-    document.removeEventListener('keydown', this.closeModal);
-  }
+const Modal = ({ closeModalWindow, data }) => {
+  const closeModal = useCallback(
+    e => {
+      if (e.code === 'Escape') {
+        closeModalWindow();
 
-  closeModal = e => {
-    if (e.code === 'Escape') {
-      this.props.closeModal();
+        return;
+      }
+      if (e.target === e.currentTarget) {
+        closeModalWindow();
+      }
+    },
+    [closeModalWindow]
+  );
 
-      return;
-    }
-    if (e.target === e.currentTarget) {
-      this.props.closeModal();
-    }
-  };
+  useEffect(() => {
+    document.addEventListener('keydown', closeModal);
+    return () => document.removeEventListener('keydown', closeModal);
+  }, [closeModal]);
 
-  render() {
-    return createPortal(
-      <div onClick={this.closeModal} className={css.overlay}>
-        <div className={css.modal}>
-          <img src={this.props.data.src} alt={this.props.data.tags} />
-        </div>
-      </div>,
-      modalWrapper
-    );
-  }
-}
+  return createPortal(
+    <div onClick={closeModal} className={css.overlay}>
+      <div className={css.modal}>
+        <img src={data.src} alt={data.tags} />
+      </div>
+    </div>,
+    modalWrapper
+  );
+};
+
+export default Modal;

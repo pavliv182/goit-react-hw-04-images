@@ -80,7 +80,7 @@ class App extends Component {
           <Button onClick={onLoadMore} />
         )}
         {loading && <Oval width={200} />}
-        {showModal && <Modal data={modalData} closeModal={closeModal} />}
+        {showModal && <Modal data={modalData} closeModalWindow={closeModal} />}
       </>
     );
   }
